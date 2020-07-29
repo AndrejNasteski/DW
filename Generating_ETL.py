@@ -166,6 +166,10 @@ def scd1_update_row(att):
     ...
 
 
+def scd2_update_row(att):
+    ...
+
+
 if __name__ == '__main__':
     with open("AdventureWorks2016_attributes.csv") as csv_attributes:
         with open("AdventureWorks2016_relationships.csv") as csv_relationships:
