@@ -18,27 +18,28 @@ def scd1_create_table(att):
 
     command = "CREATE TABLE dim." + att[1][1] + "_SCD1\n" + \
               "(SKey BIGINT IDENTITY(1,1) PRIMARY KEY NOT NULL,\n"
+    data_types = list()  # filter data types that should not be in the dimension table
+    column_names = ["ModifiedDate"]  # filter column names that should not be in the dimension table
 
     for columns in att:
-        if columns[2] == "ModifiedDate":  # we ignore the ModifiedDate column
+        if columns[2] in column_names and columns[5] == "False":
             continue
-        column_command = ""
-        column_command += str(columns[2]) + " "
-        column_command += str(columns[3]).upper()
-
+        if columns[3] in data_types and columns[5] == "False":
+            continue
+        column_command = "" \
+                         + str(columns[2]) + " " \
+                         + str(columns[3]).upper()
         if columns[4] == "True":
             column_command += " NOT NULL"
         else:
             column_command += " NULL"
-
         if columns[6] == "True":
             column_command += " UNIQUE"
-
         column_command += ',\n'
         command += column_command
 
-    command += "FirstLoadDate DATETIME NOT NULL,\n"
-    command += "LastChangeDate DATETIME NOT NULL\n)"
+    command += "FirstLoadDate DATETIME NOT NULL,\n" \
+               + "LastChangeDate DATETIME NOT NULL\n)"
 
     return command
 
@@ -63,30 +64,31 @@ def scd2_create_table(att):
 
     command = "CREATE TABLE dim." + att[1][1] + "_SCD2\n" + \
               "(SKey BIGINT IDENTITY(1,1) NOT NULL,\n"
+    data_types = list()  # filter data types that should not be in the dimension table
+    column_names = ["ModifiedDate"]  # filter column names that should not be in the dimension table
 
     for columns in att:
-        if columns[2] == "ModifiedDate":  # we ignore the ModifiedDate column
+        if columns[2] in column_names and columns[5] == "False":
             continue
-        column_command = ""
-        column_command += str(columns[2]) + " "
-        column_command += str(columns[3]).upper()
-
+        if columns[3] in data_types and columns[5] == "False":
+            continue
+        column_command = "" \
+                         + str(columns[2]) + " " \
+                         + str(columns[3]).upper()
         if columns[4] == "True":
             column_command += " NOT NULL"
         else:
             column_command += " NULL"
-
         if columns[6] == "True":
             column_command += " UNIQUE"
-
         column_command += ',\n'
         command += column_command
 
-    command += "IsCurrent BIT NOT NULL,\n"
-    command += "IsDeleted BIT NULL,\n"
-    command += "RowVersion INT NOT NULL,\n"
-    command += "ValidFrom DATETIME NOT NULL,\n"
-    command += "ValidTo DATETIME NULL\n)"
+    command += "IsCurrent BIT NOT NULL,\n" \
+               + "IsDeleted BIT NULL,\n" \
+               + "RowVersion INT NOT NULL,\n" \
+               + "ValidFrom DATETIME NOT NULL,\n" \
+               + "ValidTo DATETIME NULL\n)"
 
     return command
 
@@ -106,23 +108,28 @@ def scd1_insert_row(att, database_name):
     WHERE dwd.SKey IS NULL
 
     """
+
     table_name = att[1][1]
     command = "INSERT INTO dim." + table_name + "_SCD1\nSELECT"
-
     table_id_column = att[1][2] + "ID"  # the first column is the default value for table primary key
+    data_types = list()  # filter data types that should not be in the dimension table
+    column_names = ["ModifiedDate"]  # filter column names that should not be in the dimension table
+
     for item in att:
-        if item[2] == "ModifiedDate":
+        if item[2] in column_names and item[5] == "False":
+            continue
+        if item[3] in data_types and item[5] == "False":
             continue
         if item[5] == "True":
             table_id_column = item[2]
 
         command += " odb." + item[2] + ","
 
-    command += " GETDATE(), GETDATE()\n"
-    command += "FROM " + database_name + "." + table_name + " AS odb\n"
-    command += "LEFT JOIN dim." + att[1][1]\
-               + "_SCD1 AS dwd ON odb." + table_id_column + " = dwd." + table_id_column + "\n"
-    command += "WHERE dwd.SKey IS NULL\n"
+    command += " GETDATE(), GETDATE()\n" \
+               + "FROM " + database_name + "." + table_name + " AS odb\n" \
+               + "LEFT JOIN dim." + att[1][1] \
+               + "_SCD1 AS dwd ON odb." + table_id_column + " = dwd." + table_id_column + "\n" \
+               + "WHERE dwd.SKey IS NULL\n"
 
     return command
 
@@ -144,26 +151,66 @@ def scd2_insert_row(att, database_name):
     """
     table_name = att[1][1]
     command = "INSERT INTO dim." + table_name + "_SCD2\nSELECT"
-
     table_id_column = att[1][2] + "ID"  # the first column is the default value for table primary key
+    data_types = list()  # filter data types that should not be in the dimension table
+    column_names = ["ModifiedDate"]  # filter column names that should not be in the dimension table
+
     for item in att:
-        if item[2] == "ModifiedDate":
+        if item[2] in column_names and item[5] == "False":
+            continue
+        if item[3] in data_types and item[5] == "False":
             continue
         if item[5] == "True":
             table_id_column = item[2]
 
         command += " odb." + item[2] + ","
 
-    command += "1, 0, 1, GETDATE(), NULL\n"
-    command += "FROM " + database_name + "." + table_name + " AS odb\n"
-    command += "LEFT JOIN dim." + att[1][1] \
-               + "_SCD1 AS dwd ON odb." + table_id_column + " = dwd." + table_id_column + "\n"
-    command += "WHERE dwd.SKey IS NULL\n"
+    command += "1, 0, 1, GETDATE(), NULL\n" \
+               + "FROM " + database_name + "." + table_name + " AS odb\n" \
+               + "LEFT JOIN dim." + att[1][1] \
+               + "_SCD1 AS dwd ON odb." + table_id_column + " = dwd." + table_id_column + "\n" \
+               + "WHERE dwd.SKey IS NULL\n"
 
     return command
 
+
 def scd1_update_row(att):
-    ...
+    """
+
+    :param att: list of all rows with the same table name
+    [[schema, table, column1, type, not_null, primary_key, unique],
+      [schema, table, column2, type, not_null, primary_key, unique], ...]
+    :return:
+
+    UPDATE dim.Department_SCD1
+    SET Name=odb.Name, GroupName=odb.GroupName, DepartmentId=odb.DepartmentID
+    FROM odb.HumanResources.Department AS odb
+    WHERE dim.Department_SCD1.DepartmentID=odb.DepartmentID
+    AND HASH(old_fields) != HASH(new_fields)
+    """
+
+    table_name = att[1][1]
+    command = "UPDATE dim." + table_name + "_SCD1\nSET"
+
+    table_id_column = att[1][2] + "ID"  # the first column is the default value for table primary key
+    old_fields = ""
+    new_fields = ""
+    for item in att:
+        if item[5] == "True":
+            table_id_column = item[2]
+        old_fields += "dim." + table_name + "_SCD1." + item[2] + ", "
+        new_fields += "odb." + item[2] + ", "
+        command += item[2] + "odb." + item[2] + ", "
+
+    old_fields = old_fields[:-2]  # remove excess characters
+    new_fields = new_fields[:-2]  # remove excess characters
+    command = command[:-1]  # remove excess characters
+
+    command += "\nFROM odb." + att[0][0] + "." + table_name + " AS odb\n" \
+               + "WHERE dim." + table_name + "_SCD1." + table_id_column + "=d." + table_id_column \
+               + "\nAND HASH(" + old_fields + ") != \n HASH(" + new_fields + ")"
+
+    return command
 
 
 def scd2_update_row(att):
@@ -196,6 +243,6 @@ if __name__ == '__main__':
                 if items[1] == "AWBuildVersion":
                     lista.append(items)
 
-            print(scd1_create_table(lista))
+            print(scd1_update_row(lista))
             print("-------------------------")
-            print(scd1_insert_row(lista, "OPERACIONA"))
+            # print(scd1_insert_row(lista, "OPERACIONA"))
