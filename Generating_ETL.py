@@ -162,6 +162,9 @@ def scd2_insert_row(att, database_name):
 
     return command
 
+def scd1_update_row(att):
+    ...
+
 
 if __name__ == '__main__':
     with open("AdventureWorks2016_attributes.csv") as csv_attributes:
