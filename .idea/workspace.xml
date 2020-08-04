@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="04e29064-0442-4a80-b9df-6b19395922f5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Generating_ETL.py" beforeDir="false" afterPath="$PROJECT_DIR$/Generating_ETL.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,7 +64,19 @@
       <option name="presentableId" value="Default" />
       <updated>1596024659439</updated>
     </task>
+    <task id="LOCAL-00001" summary="Change conditions for column exclusion">
+      <created>1596046537312</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1596046537312</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Change conditions for column exclusion" />
+    <option name="LAST_COMMIT_MESSAGE" value="Change conditions for column exclusion" />
   </component>
   <component name="WindowStateProjectService">
     <state x="591" y="0" key="CommitChangelistDialog2" timestamp="1596046536318">
