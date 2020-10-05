@@ -190,7 +190,7 @@ def scd1_update_row(att):
     """
 
     table_name = att[1][1]
-    command = "UPDATE dim." + table_name + "_SCD1\nSET"
+    command = "UPDATE dim." + table_name + "_SCD1\nSET "
 
     table_id_column = att[1][2] + "ID"  # the first column is the default value for table primary key
     old_fields = ""
@@ -200,21 +200,77 @@ def scd1_update_row(att):
             table_id_column = item[2]
         old_fields += "dim." + table_name + "_SCD1." + item[2] + ", "
         new_fields += "odb." + item[2] + ", "
-        command += item[2] + "odb." + item[2] + ", "
+        command += item[2] + " = odb." + item[2] + ", "
 
     old_fields = old_fields[:-2]  # remove excess characters
     new_fields = new_fields[:-2]  # remove excess characters
-    command = command[:-1]  # remove excess characters
+    command = command[:-2]  # remove excess characters
 
     command += "\nFROM odb." + att[0][0] + "." + table_name + " AS odb\n" \
-               + "WHERE dim." + table_name + "_SCD1." + table_id_column + "=d." + table_id_column \
+               + "WHERE dim." + table_name + "_SCD1." + table_id_column + " = odb." + table_id_column \
                + "\nAND HASH(" + old_fields + ") != \n HASH(" + new_fields + ")"
 
     return command
 
 
 def scd2_update_row(att):
-    ...
+    """
+
+        :param att: list of all rows with the same table name
+        [[schema, table, column1, type, not_null, primary_key, unique],
+          [schema, table, column2, type, not_null, primary_key, unique], ...]
+        :return:
+
+        UPDATE dim.Department_SCD1
+        SET Name=odb.Name, GroupName=odb.GroupName, DepartmentId=odb.DepartmentID
+        FROM odb.HumanResources.Department AS odb
+        WHERE dim.Department_SCD1.DepartmentID=odb.DepartmentID
+        AND HASH(old_fields) != HASH(new_fields)
+        """
+
+    table_name = att[1][1]
+    table_id_column = ""
+    old_fields = ""
+    new_fields = ""
+    command = "IF object_id('#SCD2') IS NOT NULL\nDROP TABLE #SCD2\n\n"
+    command += "SELECT dwd.SKey, dwd.RowVersion + 1 as NewVersion,\n" \
+               "\tCAST(1 AS BIT) AS NewIsCurrent,\n" \
+               "\tGETDATE() AS NewValidFrom,\n" \
+               "\tCAST(NULL AS DATETIME) AS NewValidTo,\n"
+
+    for item in att:
+        if item[5] == "True":
+            table_id_column = item[2]
+
+        if item[3] == "datetime":
+            continue
+
+        command += "\todb." + item[2] + " AS New" + item[2] + ", \n"
+        old_fields += "dim." + table_name + "_SCD2." + item[2] + ", "
+        new_fields += "odb." + item[2] + ", "
+
+    old_fields = old_fields[:-2]  # remove excess characters
+    new_fields = new_fields[:-2]  # remove excess characters
+    command = command[:-3]  # remove excess characters
+
+    command += "\nINTO #SCD2 AS s\n" \
+               "FROM odb." + att[0][0] + '.' + table_name + " AS odb\n" \
+               + "JOIN dim." + table_name + "SCD_2 AS dwd ON odb." + table_id_column + " = dwd." + table_id_column \
+               + "\nAND HASH(" + old_fields + ") != HASH(" + new_fields + ")\n" \
+               + "WHERE dwd.IsCurrent = 1\n\n"
+
+    command += "UPDATE dim." + table_name + "_SCD2\n" \
+               + "SET IsCurrent = 0, ValidTo = s.NewValidFrom\n" \
+               + "FROM #SCD2 AS s\n" \
+               + "WHERE dim." + table_name + "_SCD2.SKey = s.SKey\n" \
+               + "AND dim." + table_name + "_SCD2.IsCurrent =1\n\n"
+
+    command += "SET IDENTITY_INSERT dim." + table_name + "_SCD2 ON\n\n" \
+               + "INSERT INTO dim." + table_name + "_SCD2\n" \
+               + "SELECT s.*\n FROM #SCD2 AS s\n\n" \
+               + "SET IDENTITY_INSERT dim." + table_name + "_SCD2 OFF\n"
+
+    return command
 
 
 if __name__ == '__main__':
@@ -240,9 +296,10 @@ if __name__ == '__main__':
 
             for items in attributes:
                 # print(items[1])
-                if items[1] == "AWBuildVersion":
+                if items[1] == "Department":
                     lista.append(items)
 
             print(scd1_update_row(lista))
             print("-------------------------")
+            print(scd2_update_row(lista))
             # print(scd1_insert_row(lista, "OPERACIONA"))
