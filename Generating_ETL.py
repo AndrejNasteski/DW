@@ -455,7 +455,7 @@ def insert_temp_fact(relationships, fact_columns, dim_columns):
 
 
 def update_tables(table, fact_columns):
-    fact = [i[0] for i in factColumns]
+    fact = [i[0] for i in fact_columns]
     table_name = table[0][1]
     all_columns = []
     for item in table:
